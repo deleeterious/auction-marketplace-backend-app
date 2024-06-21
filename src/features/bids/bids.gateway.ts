@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
-import { GetUser } from '../auth/get-user.decorator';
+import { GetUser } from '../../common/Decorators/get-user.decorator';
 import { User } from '../users/user.entity';
 import { BidsService } from './bids.service';
 import { CreateBidDTO } from './dto/cretae-bid.dto';
@@ -30,11 +30,9 @@ export class BidsGateway {
       console.log(err);
     }
 
-    this.server.sockets
-      .room('ddda')
-      .emit(
-        'receive_bids',
-        await this.bidsService.getLotBids(parsedData.lotId),
-      );
+    this.server.sockets.emit(
+      'receive_bids',
+      await this.bidsService.getLotBids(parsedData.lotId),
+    );
   }
 }

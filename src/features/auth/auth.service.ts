@@ -1,14 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { SingUpDTO } from './dto/sing-up.dto';
 import { User } from '../users/user.entity';
 import { SignInDTO } from './dto/sign-in.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { WsException } from '@nestjs/websockets';
 
 @Injectable()
 export class AuthService {
@@ -41,15 +38,15 @@ export class AuthService {
 
   async verifyUser(accessToken: string): Promise<User> {
     if (!accessToken) {
-      throw new UnauthorizedException();
+      throw new WsException('UnauthorizedException');
     }
 
-    const decodedToken = await this.jwtService.decode(accessToken);
+    const decodedToken = await this.jwtService.verify(accessToken);
 
-    const user: User = await this.usersService.findByEmail(decodedToken.email);
+    const user: User = await this.usersService.findById(decodedToken.userId);
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new WsException('User not found');
     }
 
     return user;

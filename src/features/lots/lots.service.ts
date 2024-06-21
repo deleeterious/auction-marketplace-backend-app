@@ -3,6 +3,11 @@ import { Lot } from './lot.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateLotDTO } from './dto/create-lot.dto';
+import {
+  PaginatedResource,
+  Pagination,
+} from 'src/common/Decorators/get-pagination-params.decorator';
+import { GetLotsFilter } from './types';
 
 @Injectable()
 export class LotsService {
@@ -30,15 +35,58 @@ export class LotsService {
     }
   }
 
-  async getLots(userId?: string): Promise<Lot[]> {
-    if (userId) {
-      return await this.lotsRepository.find({
-        where: {
-          userId: Number(userId),
-        },
-      });
+  async getLots(
+    { page, limit, size, offset }: Pagination,
+    filter: GetLotsFilter | undefined,
+    userId: number,
+  ): Promise<PaginatedResource<Lot>> {
+    // const findOptions: FindManyOptions<Lot> = {
+    //   take: limit,
+    //   skip: offset,
+    // };
+
+    // if (filter?.relation === 'created') {
+    //   findOptions.where = {
+    //     userId,
+    //   };
+    // }
+
+    // if (filter?.relation === 'participation') {
+    //   findOptions.relations = {
+    //     bids: true,
+    //   };
+
+    //   findOptions.where = {
+    //     bids: {
+    //       userId: Number(userId),
+    //     },
+    //   };
+    // }
+
+    // const [data, total] = await this.lotsRepository.findAndCount(findOptions);
+
+    const query = this.lotsRepository
+      .createQueryBuilder('lot')
+      .take(limit)
+      .skip(offset);
+
+    if (filter?.relation === 'created') {
+      query.where('"userId" = :userId', { userId });
     }
 
-    return await this.lotsRepository.find();
+    if (filter?.relation === 'participation') {
+      query
+        .leftJoin('lot.bids', 'bids')
+        .where('"bids"."userId" = :userId', { userId });
+    }
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      total,
+      data,
+      page,
+      size,
+    };
   }
 }

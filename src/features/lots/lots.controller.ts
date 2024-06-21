@@ -5,13 +5,19 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { LotsService } from './lots.service';
-import { GetUser } from '../auth/get-user.decorator';
+import { GetUser } from '../../common/Decorators/get-user.decorator';
 import { CreateLotDTO } from './dto/create-lot.dto';
 import { AuthGuard } from '@nestjs/passport';
+import {
+  GetPaginationParams,
+  Pagination,
+} from 'src/common/Decorators/get-pagination-params.decorator';
+import { GetFilterParams } from 'src/common/Decorators/get-filter-params.decorator';
+import { GetLotsFilter } from './types';
+import { User } from '../users/user.entity';
 
 @Controller('lots')
 export class LotsController {
@@ -34,13 +40,17 @@ export class LotsController {
 
   @UseGuards(AuthGuard())
   @Get(':id')
-  async getLot(@Param('id') id: string, @GetUser() user) {
+  async getLot(@Param('id') id: string, @GetUser() user: User) {
     return await this.lotsService.getLot(Number(id), user.id);
   }
 
   @UseGuards(AuthGuard())
   @Get()
-  async getLots(@Query('userId') userId: string) {
-    return await this.lotsService.getLots(userId);
+  async getLots(
+    @GetUser() user: User,
+    @GetPaginationParams() pagination: Pagination,
+    @GetFilterParams() filter: GetLotsFilter | undefined,
+  ) {
+    return await this.lotsService.getLots(pagination, filter, user.id);
   }
 }
