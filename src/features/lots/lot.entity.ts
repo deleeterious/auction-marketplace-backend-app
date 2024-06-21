@@ -3,9 +3,11 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Bid } from '../bids/bids.entity';
 
 export enum LotStatus {
   Pending = 'pending',
@@ -50,4 +52,7 @@ export class Lot {
 
   @ManyToOne(() => User)
   user: User;
+
+  @OneToMany(() => Bid, (bid) => bid.lot)
+  bids: Bid[];
 }

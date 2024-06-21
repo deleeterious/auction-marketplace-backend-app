@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { BidsGateway } from './bids.gateway';
 import { BidsService } from './bids.service';
-import { BidsController } from './bids.controller';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from '../auth/auth.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Bid } from './bids.entity';
 
 @Module({
-  imports: [PassportModule.register({ defaultStrategy: 'jwt' }), AuthModule],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    TypeOrmModule.forFeature([Bid]),
+    AuthModule,
+  ],
   providers: [BidsGateway, BidsService],
-  controllers: [BidsController],
 })
 export class BidsModule {}
