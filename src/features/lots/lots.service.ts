@@ -1,5 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { Lot } from './lot.entity';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { Lot, LotStatus } from './lot.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateLotDTO } from './dto/create-lot.dto';
@@ -8,6 +12,7 @@ import {
   Pagination,
 } from 'src/common/Decorators/get-pagination-params.decorator';
 import { GetLotsFilter } from './types';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class LotsService {
@@ -20,8 +25,12 @@ export class LotsService {
   }
 
   async updateLot(data: Partial<CreateLotDTO>, id: number): Promise<Lot> {
+    const lot = await this.lotsRepository.findOne({ where: { id } });
+    if (lot.status !== LotStatus.Pending) {
+      throw new BadRequestException('Incorrect status');
+    }
     await this.lotsRepository.update(id, data);
-    return this.lotsRepository.findOne({ where: { id } });
+    return lot;
   }
 
   async getLot(id: number, userId: number): Promise<Lot> {
@@ -88,5 +97,31 @@ export class LotsService {
       page,
       size,
     };
+  }
+
+  @Cron(CronExpression.EVERY_5_SECONDS)
+  async handleCrone() {
+    await this.lotsRepository
+      .createQueryBuilder('lot')
+      .update(Lot)
+      .set({ status: LotStatus.InProgress })
+      .where(
+        '"lot"."startTime" <= :dateNow and "lot"."endTime" > :dateNow  and "lot"."status" = :status',
+        {
+          dateNow: new Date().toISOString(),
+          status: LotStatus.Pending,
+        },
+      )
+      .execute();
+
+    await this.lotsRepository
+      .createQueryBuilder('lot')
+      .update(Lot)
+      .set({ status: LotStatus.Closed })
+      .where('"lot"."endTime" <= :dateNow  and "lot"."status" = :status', {
+        dateNow: new Date().toISOString(),
+        status: LotStatus.InProgress,
+      })
+      .execute();
   }
 }

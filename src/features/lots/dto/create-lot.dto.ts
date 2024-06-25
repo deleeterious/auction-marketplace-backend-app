@@ -5,7 +5,9 @@ import {
   IsNumber,
   IsOptional,
   Min,
+  MinDate,
 } from 'class-validator';
+import { IsHigherThen } from 'src/common/Decorators/is-higher-then';
 
 export class CreateLotDTO {
   @IsNotEmpty()
@@ -30,9 +32,13 @@ export class CreateLotDTO {
 
   @IsNotEmpty()
   @IsDateString()
+  @MinDate(() => new Date())
   startTime: Date;
 
   @IsNotEmpty()
   @IsDateString()
+  @IsHigherThen('startTime', {
+    message: 'endTime should be higher then startTime',
+  })
   endTime: Date;
 }

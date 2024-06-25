@@ -6,6 +6,7 @@ import { UsersModule } from './features/users/users.module';
 import { LotsModule } from './features/lots/lots.module';
 import { BidsModule } from './features/bids/bids.module';
 import typeorm from './config/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import typeorm from './config/typeorm';
       useFactory: async (configService: ConfigService) =>
         configService.get('typeorm'),
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     LotsModule,
