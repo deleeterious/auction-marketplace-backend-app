@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   Min,
-  MinDate,
 } from 'class-validator';
 import { IsHigherThen } from 'src/common/Decorators/is-higher-then';
 
@@ -32,7 +31,7 @@ export class CreateLotDTO {
 
   @IsNotEmpty()
   @IsDateString()
-  @MinDate(() => new Date())
+  // @MinDate(() => new Date())
   startTime: Date;
 
   @IsNotEmpty()

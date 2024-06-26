@@ -2,12 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Bid } from '../bids/bids.entity';
+import { Order } from '../orders/order.entity';
 
 export enum LotStatus {
   Pending = 'pending',
@@ -55,4 +58,11 @@ export class Lot {
 
   @OneToMany(() => Bid, (bid) => bid.lot)
   bids: Bid[];
+
+  @OneToOne(() => Order, (order) => order.lot)
+  order: Order;
+
+  @OneToOne(() => Bid, { nullable: true })
+  @JoinColumn()
+  winningBid?: Bid;
 }

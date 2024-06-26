@@ -7,6 +7,7 @@ import { LotsModule } from './features/lots/lots.module';
 import { BidsModule } from './features/bids/bids.module';
 import typeorm from './config/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { OrdersModule } from './features/orders/orders.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     UsersModule,
     LotsModule,
     BidsModule,
+    OrdersModule,
   ],
 })
 export class AppModule {}

@@ -76,6 +76,7 @@ export class LotsService {
 
     const query = this.lotsRepository
       .createQueryBuilder('lot')
+      .leftJoinAndSelect('lot.order', 'order')
       .take(limit)
       .skip(offset);
 
@@ -123,5 +124,26 @@ export class LotsService {
         status: LotStatus.InProgress,
       })
       .execute();
+
+    const lots = await this.lotsRepository
+      .createQueryBuilder('lot')
+      .leftJoinAndSelect('lot.bids', 'bids')
+      .where('"lot"."winningBidId" is NULL and "lot"."status" = :status', {
+        status: LotStatus.Closed,
+      })
+      .andWhere('"bids"."price" is not NULL')
+      .getMany();
+
+    for (const lot of lots) {
+      const winningBid = lot.bids.reduce((acc, item) => {
+        if (item.price > acc.price) {
+          return item;
+        }
+
+        return acc;
+      }, lot.bids[0]);
+
+      await this.lotsRepository.update({ id: lot.id }, { winningBid });
+    }
   }
 }
