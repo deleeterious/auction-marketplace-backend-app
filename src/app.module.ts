@@ -9,6 +9,7 @@ import typeorm from './config/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OrdersModule } from './features/orders/orders.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { PasswordRecoveryModule } from './features/password-recovery/password-recovery.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     LotsModule,
     BidsModule,
     OrdersModule,
+    PasswordRecoveryModule,
   ],
 })
 export class AppModule {}

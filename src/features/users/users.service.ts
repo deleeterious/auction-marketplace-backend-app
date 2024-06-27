@@ -32,6 +32,13 @@ export class UsersService {
     }
   }
 
+  async updatePassword(password: string, userId: number) {
+    const salt = await bcrypt.genSalt();
+    const hashedPass = await bcrypt.hash(password, salt);
+
+    this.usersRepository.update({ id: userId }, { password: hashedPass });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOneBy({ email });
   }
