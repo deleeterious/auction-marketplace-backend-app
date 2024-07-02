@@ -92,8 +92,8 @@ export class PasswordRecoveryService {
     await this.passwordRecoveryRepository
       .createQueryBuilder('passwordRecovery')
       .delete()
-      .where(
-        `"passwordRecovery"."createdAt" + (15 * interval '1 minute') <= current_timestamp`,
-      );
+      .from(PasswordRecovery)
+      .where(`createdAt + (15 * interval '1 minute') <= current_timestamp`)
+      .execute();
   }
 }

@@ -13,10 +13,14 @@ import {
 } from 'src/common/Decorators/get-pagination-params.decorator';
 import { GetLotsFilter } from './types';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class LotsService {
-  constructor(@InjectRepository(Lot) private lotsRepository: Repository<Lot>) {}
+  constructor(
+    @InjectRepository(Lot) private lotsRepository: Repository<Lot>,
+    private mailerService: MailerService,
+  ) {}
 
   async createLot(data: CreateLotDTO, userId: number): Promise<Lot> {
     const lot = this.lotsRepository.create({ ...data, userId });
@@ -100,34 +104,53 @@ export class LotsService {
     };
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
-  async handleCrone() {
+  private async startLots() {
     await this.lotsRepository
       .createQueryBuilder('lot')
       .update(Lot)
       .set({ status: LotStatus.InProgress })
       .where(
-        '"lot"."startTime" <= :dateNow and "lot"."endTime" > :dateNow  and "lot"."status" = :status',
+        '"lot"."startTime" <= current_timestamp and "lot"."endTime" > current_timestamp  and "lot"."status" = :status',
         {
-          dateNow: new Date().toISOString(),
           status: LotStatus.Pending,
         },
       )
       .execute();
+  }
 
-    await this.lotsRepository
+  private async closeLots() {
+    const lots = await this.lotsRepository
       .createQueryBuilder('lot')
-      .update(Lot)
-      .set({ status: LotStatus.Closed })
-      .where('"lot"."endTime" <= :dateNow  and "lot"."status" = :status', {
-        dateNow: new Date().toISOString(),
-        status: LotStatus.InProgress,
-      })
-      .execute();
+      .leftJoinAndSelect('lot.user', 'user')
+      .where(
+        '"lot"."endTime" <= current_timestamp  and "lot"."status" = :status',
+        {
+          status: LotStatus.InProgress,
+        },
+      )
+      .getMany();
 
+    for (const lot of lots) {
+      this.lotsRepository.update(lot.id, { status: LotStatus.Closed });
+
+      this.mailerService.sendMail({
+        to: lot.user.email,
+        from: 'test@test.com',
+        subject: `Your lot is closed`,
+        html: `
+      <div>
+        <p>Lot ${lot.id} closed</p>
+      </div>
+      `,
+      });
+    }
+  }
+
+  private async setWinningBid() {
     const lots = await this.lotsRepository
       .createQueryBuilder('lot')
       .leftJoinAndSelect('lot.bids', 'bids')
+      .leftJoinAndSelect('lot.user', 'user')
       .where('"lot"."winningBidId" is NULL and "lot"."status" = :status', {
         status: LotStatus.Closed,
       })
@@ -143,7 +166,27 @@ export class LotsService {
         return acc;
       }, lot.bids[0]);
 
+      this.mailerService.sendMail({
+        to: winningBid.user.email,
+        from: 'test@test.com',
+        subject: `Gz!!! Your bid won`,
+        html: `
+          <div>
+            <p>Lot ${lot.id}</p>
+          </div>
+        `,
+      });
+
       await this.lotsRepository.update({ id: lot.id }, { winningBid });
     }
+  }
+
+  @Cron(CronExpression.EVERY_5_SECONDS)
+  async handleCrone() {
+    await this.startLots();
+
+    await this.closeLots();
+
+    await this.setWinningBid();
   }
 }

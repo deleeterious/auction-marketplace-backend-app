@@ -31,7 +31,6 @@ export class CreateLotDTO {
 
   @IsNotEmpty()
   @IsDateString()
-  // @MinDate(() => new Date())
   startTime: Date;
 
   @IsNotEmpty()
