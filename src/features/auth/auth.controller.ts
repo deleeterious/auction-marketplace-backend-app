@@ -9,13 +9,14 @@ import { AuthService } from './auth.service';
 import { SingUpDTO } from './dto/sing-up.dto';
 import { SignInDTO } from './dto/sign-in.dto';
 import { ConfirmEmailDTO } from './dto/confirm-email.dto';
+import { User } from '../users/user.entity';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('/sign-up')
-  singUp(@Body() body: SingUpDTO) {
+  singUp(@Body() body: SingUpDTO): Promise<User> {
     return this.authService.singUp(body);
   }
 

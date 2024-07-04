@@ -11,7 +11,7 @@ export class UsersService {
     @InjectRepository(User) private usersRepository: Repository<User>,
   ) {}
 
-  async createUser(singUpData: SingUpDTO) {
+  async createUser(singUpData: SingUpDTO): Promise<User> {
     const { password, ...data } = singUpData;
     const salt = await bcrypt.genSalt();
     const hashedPass = await bcrypt.hash(password, salt);
@@ -19,7 +19,7 @@ export class UsersService {
     const user = this.usersRepository.create({ password: hashedPass, ...data });
 
     try {
-      await this.usersRepository.save(user);
+      return await this.usersRepository.save(user);
     } catch (err) {
       if (err.code === '23505') {
         throw new HttpException(

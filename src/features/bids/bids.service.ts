@@ -5,18 +5,25 @@ import { Repository } from 'typeorm';
 import { CreateBidDTO } from './dto/cretae-bid.dto';
 
 import { Lot, LotStatus } from '../lots/lot.entity';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class BidsService {
   constructor(
     @InjectRepository(Bid) private bidsRepository: Repository<Bid>,
     @InjectRepository(Lot) private lotsRepository: Repository<Lot>,
+    private mailerService: MailerService,
   ) {}
 
   async createBid(data: CreateBidDTO, userId) {
     const { price, lotId } = data;
 
-    const lot = await this.lotsRepository.findOne({ where: { id: lotId } });
+    let currentBid: Bid | null = null;
+
+    const lot = await this.lotsRepository.findOne({
+      relations: { user: true },
+      where: { id: lotId },
+    });
 
     if (lot.userId === userId) {
       throw new BadRequestException("You cann't create bid for this lot");
@@ -36,6 +43,7 @@ export class BidsService {
     }
 
     const bid = await this.bidsRepository.findOne({
+      relations: { user: true },
       where: {
         lotId,
         userId,
@@ -43,11 +51,48 @@ export class BidsService {
     });
 
     if (bid) {
+      currentBid = bid;
       await this.bidsRepository.update(bid.id, { price });
-      return;
+    } else {
+      await this.bidsRepository.save({ userId, price, lotId });
+      currentBid = await this.bidsRepository.findOne({
+        relations: { user: true },
+        where: {
+          lotId,
+          userId,
+        },
+      });
     }
 
-    await this.bidsRepository.save({ userId, price, lotId });
+    if (price >= lot.estimatedPrice) {
+      this.lotsRepository.update(lot.id, {
+        status: LotStatus.Closed,
+        winningBid: currentBid,
+      });
+
+      this.mailerService.sendMail({
+        to: lot.user.email,
+        from: 'test@test.com',
+        subject: `Your lot is closed`,
+        html: `
+      <div>
+        <p>Lot ${lot.id} closed</p>
+        <p>${lot.winningBid ? `Your lot has been sold for $${lot.winningBid.price}` : 'No bids'}</p>
+      </div>
+      `,
+      });
+
+      this.mailerService.sendMail({
+        to: currentBid.user.email,
+        from: 'test@test.com',
+        subject: `Gz!!! Your bid won`,
+        html: `
+          <div>
+            <p>Lot ${lot.id}</p>
+          </div>
+        `,
+      });
+    }
   }
 
   async getLotBids(lotId: number) {

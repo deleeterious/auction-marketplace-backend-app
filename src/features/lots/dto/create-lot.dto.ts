@@ -6,6 +6,7 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
+import { IsDateGreaterThenNow } from 'src/common/Decorators/date-greater-then-now';
 import { IsHigherThen } from 'src/common/Decorators/is-higher-then';
 
 export class CreateLotDTO {
@@ -31,6 +32,9 @@ export class CreateLotDTO {
 
   @IsNotEmpty()
   @IsDateString()
+  @IsDateGreaterThenNow({
+    message: 'Start time should be higher then now',
+  })
   startTime: Date;
 
   @IsNotEmpty()

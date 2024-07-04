@@ -16,7 +16,7 @@ export class AuthService {
     private mailerService: MailerService,
   ) {}
 
-  async singUp(data: SingUpDTO) {
+  async singUp(data: SingUpDTO): Promise<User> {
     const payload = { email: data.email };
 
     const token = this.jwtService.sign(payload, {
@@ -24,17 +24,20 @@ export class AuthService {
       expiresIn: '1d',
     });
 
-    await this.usersService.createUser(data);
+    const user = await this.usersService.createUser(data);
+
     await this.mailerService.sendMail({
       to: data.email,
       subject: 'Email confirmation',
       html: `
-        <div>
-          <p>Confirmation token</p>
-          <p>${token}</p>
-        </div>
+      <div>
+      <p>Confirmation token</p>
+      <p>${token}</p>
+      </div>
       `,
     });
+
+    return user;
   }
 
   async signIn(data: SignInDTO): Promise<{ accessToken: string }> {

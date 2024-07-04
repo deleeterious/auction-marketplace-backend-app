@@ -104,7 +104,12 @@ export class OrdersService {
   async executeOrder(id: number, user: User) {
     const order = await this.ordersRepository.findOne({
       relations: {
-        lot: true,
+        lot: {
+          user: true,
+        },
+        bid: {
+          user: true,
+        },
       },
       where: { id },
     });
@@ -115,10 +120,29 @@ export class OrdersService {
       );
     }
 
-    return await this.ordersRepository.update(
-      { id },
-      { status: OrderStatus.Sent },
-    );
+    await this.ordersRepository.update({ id }, { status: OrderStatus.Sent });
+
+    this.mailerService.sendMail({
+      to: order.lot.user.email,
+      from: 'test@test.com',
+      subject: 'Order status changed',
+      html: `
+        <div>
+          <p>Order status changed to 'Sent'</p>
+        </div>
+      `,
+    });
+
+    this.mailerService.sendMail({
+      to: order.bid.user.email,
+      from: 'test@test.com',
+      subject: 'Order status changed',
+      html: `
+        <div>
+          <p>Order status changed to 'Sent'</p>
+        </div>
+      `,
+    });
   }
 
   async receiveOrder(id: number, user: User) {
@@ -126,6 +150,10 @@ export class OrdersService {
       relations: {
         lot: {
           winningBid: true,
+          user: true,
+        },
+        bid: {
+          user: true,
         },
       },
       where: { id },
@@ -140,9 +168,31 @@ export class OrdersService {
       );
     }
 
-    return await this.ordersRepository.update(
+    await this.ordersRepository.update(
       { id },
       { status: OrderStatus.Delivered },
     );
+
+    this.mailerService.sendMail({
+      to: order.lot.user.email,
+      from: 'test@test.com',
+      subject: 'Order status changed',
+      html: `
+        <div>
+          <p>Order status changed to 'Delivered'</p>
+        </div>
+      `,
+    });
+
+    this.mailerService.sendMail({
+      to: order.bid.user.email,
+      from: 'test@test.com',
+      subject: 'Order created',
+      html: `
+        <div>
+          <p>Order status changed to 'Delivered'</p>
+        </div>
+      `,
+    });
   }
 }

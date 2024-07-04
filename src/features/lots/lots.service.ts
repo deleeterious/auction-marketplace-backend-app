@@ -43,7 +43,7 @@ export class LotsService {
 
     await this.lotsRepository.update(id, data);
 
-    return lot;
+    return await this.lotsRepository.findOne({ where: { id } });
   }
 
   async getLot(id: number, userId: number): Promise<Lot> {
