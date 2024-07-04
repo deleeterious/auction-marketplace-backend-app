@@ -22,6 +22,9 @@ export class User {
   @Column()
   lastName: string;
 
-  @Column({ type: 'date' })
-  birthDate: string;
+  @Column({ type: 'timestamptz' })
+  birthDate: Date;
+
+  @Column({ type: 'boolean', default: false })
+  verified: boolean;
 }

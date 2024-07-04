@@ -46,4 +46,8 @@ export class UsersService {
   async findById(id: number): Promise<User | null> {
     return this.usersRepository.findOneBy({ id });
   }
+
+  async verifyEmail(email: string) {
+    return this.usersRepository.update({ email }, { verified: true });
+  }
 }

@@ -14,6 +14,8 @@ import {
 import { GetLotsFilter } from './types';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
+import { UpdateLotDTO } from './dto/update-lot.dto';
+import { User } from '../users/user.entity';
 
 @Injectable()
 export class LotsService {
@@ -28,12 +30,19 @@ export class LotsService {
     return await this.lotsRepository.save(lot);
   }
 
-  async updateLot(data: Partial<CreateLotDTO>, id: number): Promise<Lot> {
+  async updateLot(data: UpdateLotDTO, id: number, user: User): Promise<Lot> {
     const lot = await this.lotsRepository.findOne({ where: { id } });
+
+    if (user.id !== lot.userId) {
+      throw new BadRequestException("You don't have access to update this lot");
+    }
+
     if (lot.status !== LotStatus.Pending) {
       throw new BadRequestException('Incorrect status');
     }
+
     await this.lotsRepository.update(id, data);
+
     return lot;
   }
 
@@ -81,6 +90,7 @@ export class LotsService {
     const query = this.lotsRepository
       .createQueryBuilder('lot')
       .leftJoinAndSelect('lot.order', 'order')
+      .where('lot.status = :status', { status: LotStatus.InProgress })
       .take(limit)
       .skip(offset);
 
@@ -110,7 +120,7 @@ export class LotsService {
       .update(Lot)
       .set({ status: LotStatus.InProgress })
       .where(
-        '"lot"."startTime" <= current_timestamp and "lot"."endTime" > current_timestamp  and "lot"."status" = :status',
+        '"lot"."startTime" <= current_timestamp and "lot"."status" = :status',
         {
           status: LotStatus.Pending,
         },
@@ -122,6 +132,7 @@ export class LotsService {
     const lots = await this.lotsRepository
       .createQueryBuilder('lot')
       .leftJoinAndSelect('lot.user', 'user')
+      .leftJoinAndSelect('lot.winningBid', 'winningBid')
       .where(
         '"lot"."endTime" <= current_timestamp  and "lot"."status" = :status',
         {
@@ -140,6 +151,7 @@ export class LotsService {
         html: `
       <div>
         <p>Lot ${lot.id} closed</p>
+        <p>${lot.winningBid ? `Your lot has been sold for $${lot.winningBid.price}` : 'No bids'}</p>
       </div>
       `,
       });
@@ -150,10 +162,14 @@ export class LotsService {
     const lots = await this.lotsRepository
       .createQueryBuilder('lot')
       .leftJoinAndSelect('lot.bids', 'bids')
+      .leftJoinAndSelect('bids.user', 'bids.user')
       .leftJoinAndSelect('lot.user', 'user')
-      .where('"lot"."winningBidId" is NULL and "lot"."status" = :status', {
-        status: LotStatus.Closed,
-      })
+      .where(
+        '"lot"."winningBidId" is NULL and "lot"."endTime" <= current_timestamp  and "lot"."status" = :status',
+        {
+          status: LotStatus.InProgress,
+        },
+      )
       .andWhere('"bids"."price" is not NULL')
       .getMany();
 
@@ -185,8 +201,8 @@ export class LotsService {
   async handleCrone() {
     await this.startLots();
 
-    await this.closeLots();
-
     await this.setWinningBid();
+
+    await this.closeLots();
   }
 }

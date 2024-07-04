@@ -6,16 +6,35 @@ import { SignInDTO } from './dto/sign-in.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
 
   async singUp(data: SingUpDTO) {
+    const payload = { email: data.email };
+
+    const token = this.jwtService.sign(payload, {
+      secret: 'EMAIL CONFIRMATION SUPER SECRET',
+      expiresIn: '1d',
+    });
+
     await this.usersService.createUser(data);
+    await this.mailerService.sendMail({
+      to: data.email,
+      subject: 'Email confirmation',
+      html: `
+        <div>
+          <p>Confirmation token</p>
+          <p>${token}</p>
+        </div>
+      `,
+    });
   }
 
   async signIn(data: SignInDTO): Promise<{ accessToken: string }> {
@@ -34,6 +53,32 @@ export class AuthService {
     });
 
     return { accessToken };
+  }
+
+  public async confirmEmail(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (user.verified) {
+      throw new BadRequestException('Email already confirmed');
+    }
+    await this.usersService.verifyEmail(email);
+  }
+
+  public async decodeConfirmationToken(token: string) {
+    try {
+      const payload = await this.jwtService.verify(token, {
+        secret: 'EMAIL CONFIRMATION SUPER SECRET',
+      });
+
+      if (typeof payload === 'object' && 'email' in payload) {
+        return payload.email;
+      }
+      throw new BadRequestException();
+    } catch (error) {
+      if (error?.name === 'TokenExpiredError') {
+        throw new BadRequestException('Email confirmation token expired');
+      }
+      throw new BadRequestException('Bad confirmation token');
+    }
   }
 
   async verifyUser(accessToken: string): Promise<User> {

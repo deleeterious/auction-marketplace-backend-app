@@ -18,6 +18,7 @@ import {
 import { GetFilterParams } from 'src/common/Decorators/get-filter-params.decorator';
 import { GetLotsFilter } from './types';
 import { User } from '../users/user.entity';
+import { UpdateLotDTO } from './dto/update-lot.dto';
 
 @Controller('lots')
 export class LotsController {
@@ -33,9 +34,10 @@ export class LotsController {
   @Patch(':id')
   async updateLot(
     @Param('id') id: string,
-    @Body() body: Partial<CreateLotDTO>,
+    @Body() body: UpdateLotDTO,
+    @GetUser() user: User,
   ) {
-    return await this.lotsService.updateLot(body, Number(id));
+    return await this.lotsService.updateLot(body, Number(id), user);
   }
 
   @UseGuards(AuthGuard())

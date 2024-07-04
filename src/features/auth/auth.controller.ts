@@ -8,6 +8,7 @@ import {
 import { AuthService } from './auth.service';
 import { SingUpDTO } from './dto/sing-up.dto';
 import { SignInDTO } from './dto/sign-in.dto';
+import { ConfirmEmailDTO } from './dto/confirm-email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,5 +23,13 @@ export class AuthController {
   @Post('/sign-in')
   async login(@Body() body: SignInDTO): Promise<{ accessToken: string }> {
     return await this.authService.signIn(body);
+  }
+
+  @Post('confirm')
+  async confirm(@Body() confirmationData: ConfirmEmailDTO) {
+    const email = await this.authService.decodeConfirmationToken(
+      confirmationData.token,
+    );
+    await this.authService.confirmEmail(email);
   }
 }

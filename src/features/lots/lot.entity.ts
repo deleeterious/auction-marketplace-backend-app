@@ -26,7 +26,7 @@ export class Lot {
   @Column()
   title: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   image: string;
 
   @Column({ nullable: true })
@@ -38,16 +38,16 @@ export class Lot {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'money' })
+  @Column({ type: 'numeric' })
   currentPrice: number;
 
-  @Column({ type: 'money' })
+  @Column({ type: 'numeric' })
   estimatedPrice: number;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamptz' })
   startTime: Date;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamptz' })
   endTime: Date;
 
   @Column()

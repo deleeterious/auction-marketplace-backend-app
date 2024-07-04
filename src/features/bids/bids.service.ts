@@ -18,6 +18,10 @@ export class BidsService {
 
     const lot = await this.lotsRepository.findOne({ where: { id: lotId } });
 
+    if (lot.userId === userId) {
+      throw new BadRequestException("You cann't create bid for this lot");
+    }
+
     if (lot.status !== LotStatus.InProgress) {
       throw new BadRequestException("Lot isn't started");
     }
@@ -27,7 +31,7 @@ export class BidsService {
       .select('MAX("bids"."price")', 'max')
       .getRawOne();
 
-    if (price <= Number(result.max.substring(1))) {
+    if (price < result.max) {
       throw new BadRequestException('Incorrect price');
     }
 

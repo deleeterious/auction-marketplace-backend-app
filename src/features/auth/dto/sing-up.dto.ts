@@ -1,4 +1,5 @@
 import { IsDateString, IsEmail, IsNotEmpty } from 'class-validator';
+import { Is21YearsOld } from '../../../common/Decorators/birth-date-validation.decorator';
 
 export class SingUpDTO {
   @IsEmail()
@@ -19,5 +20,6 @@ export class SingUpDTO {
 
   @IsNotEmpty()
   @IsDateString()
+  @Is21YearsOld({ message: 'Incorrect date' })
   birthDate: string;
 }
