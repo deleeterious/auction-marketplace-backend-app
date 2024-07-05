@@ -73,7 +73,7 @@ export class BidsService {
       this.mailerService.sendMail({
         to: lot.user.email,
         from: 'test@test.com',
-        subject: `Your lot is closed`,
+        subject: `Your lot has been closed`,
         html: `
       <div>
         <p>Lot ${lot.id} closed</p>

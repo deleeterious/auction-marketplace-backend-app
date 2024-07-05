@@ -187,7 +187,7 @@ export class OrdersService {
     this.mailerService.sendMail({
       to: order.bid.user.email,
       from: 'test@test.com',
-      subject: 'Order created',
+      subject: 'Order status changed',
       html: `
         <div>
           <p>Order status changed to 'Delivered'</p>
