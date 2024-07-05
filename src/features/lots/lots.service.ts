@@ -46,6 +46,22 @@ export class LotsService {
     return await this.lotsRepository.findOne({ where: { id } });
   }
 
+  async deleteLot(id: number, user: User): Promise<Lot> {
+    const lot = await this.lotsRepository.findOne({ where: { id } });
+
+    if (user.id !== lot.userId) {
+      throw new BadRequestException("You don't have access to update this lot");
+    }
+
+    if (lot.status !== LotStatus.Pending) {
+      throw new BadRequestException('Incorrect status');
+    }
+
+    await this.lotsRepository.delete(id);
+
+    return lot;
+  }
+
   async getLot(id: number, userId: number): Promise<Lot> {
     try {
       return await this.lotsRepository.findOneOrFail({

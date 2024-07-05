@@ -15,7 +15,7 @@ export class Bid {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'money' })
+  @Column({ type: 'integer' })
   price: number;
 
   @CreateDateColumn()

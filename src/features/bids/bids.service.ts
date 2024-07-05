@@ -38,7 +38,7 @@ export class BidsService {
       .select('MAX("bids"."price")', 'max')
       .getRawOne();
 
-    if (price < result.max) {
+    if (price < result.max || price < lot.currentPrice) {
       throw new BadRequestException('Incorrect price');
     }
 

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -38,6 +39,12 @@ export class LotsController {
     @GetUser() user: User,
   ) {
     return await this.lotsService.updateLot(body, Number(id), user);
+  }
+
+  @UseGuards(AuthGuard())
+  @Delete(':id')
+  async deleteLot(@Param('id') id: string, @GetUser() user: User) {
+    return await this.lotsService.deleteLot(Number(id), user);
   }
 
   @UseGuards(AuthGuard())

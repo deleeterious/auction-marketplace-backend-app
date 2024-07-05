@@ -35,4 +35,15 @@ export class BidsGateway {
       await this.bidsService.getLotBids(parsedData.lotId),
     );
   }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('request_bids')
+  async requestBids(@MessageBody() data: string) {
+    const parsedData: CreateBidDTO = JSON.parse(data);
+
+    this.server.sockets.emit(
+      'receive_bids',
+      await this.bidsService.getLotBids(parsedData.lotId),
+    );
+  }
 }
